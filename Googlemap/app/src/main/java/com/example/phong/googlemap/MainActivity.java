@@ -2,11 +2,15 @@ package com.example.phong.googlemap;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.WindowManager;
@@ -51,7 +55,7 @@ public class MainActivity extends AppCompatActivity  {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                checkConnection();
+                checkEnableGPS();
             }
         }, 3000);
     }
@@ -67,6 +71,54 @@ public class MainActivity extends AppCompatActivity  {
             finish();
         }else{
             Toast.makeText(MainActivity.this,"Internet not available!!!",Toast.LENGTH_SHORT).show();
+            avi.hide();
+            imgLogo.clearAnimation();
+            Intent intent = new Intent(MainActivity.this, MapActivity.class);
+            startActivity(intent);
+            finish();
+        }
+    }
+
+    private void checkEnableGPS(){
+        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch(Exception ex) {}
+
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch(Exception ex) {}
+
+        if(!gps_enabled || !network_enabled) {
+            // notify user
+            AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
+            dialog.setMessage("GPS or Network not enabled");
+            dialog.setPositiveButton("Open gps and net work", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+                    WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+                    wifiManager.setWifiEnabled(true);
+                    avi.hide();
+                    imgLogo.clearAnimation();
+                    Intent intent = new Intent(MainActivity.this, MapActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+            });
+            dialog.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+                    finish();
+                }
+            });
+            dialog.show();
+        }else{
             avi.hide();
             imgLogo.clearAnimation();
             Intent intent = new Intent(MainActivity.this, MapActivity.class);

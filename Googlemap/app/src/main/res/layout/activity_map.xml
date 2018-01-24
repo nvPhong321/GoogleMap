@@ -8,10 +8,315 @@
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/map"
         tools:context=".MapActivity"
-        android:name="com.google.android.gms.maps.SupportMapFragment"/>
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="25dp"
+        android:background="@android:drawable/dialog_holo_light_frame"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true">
+
+        <ImageView
+            android:id="@+id/imgSearch"
+            android:layout_width="40dp"
+            android:layout_height="30dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_search" />
+
+        <AutoCompleteTextView
+            android:maxLines="1"
+            android:singleLine="true"
+            android:imeOptions="actionSearch"
+            android:id="@+id/edtSearch"
+            android:layout_marginRight="40dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@+id/imgSearch"
+            android:background="#00000000"
+            android:hint="Enter Address, City or Zip Code"
+            android:textColor="#000"
+            android:textSize="15sp" />
+        <ImageView
+            android:id="@+id/btnClear"
+            android:layout_alignParentRight="true"
+            android:layout_width="40dp"
+            android:layout_height="30dp"
+            android:layout_centerVertical="true"
+            android:visibility="invisible"
+            android:src="@drawable/ic_clear" />
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/btn_direct"
+        android:layout_marginTop="300dp"
+        android:layout_width="90dp"
+        android:layout_height="30dp"
+        android:text="Direct"
+        android:textColor="#fff"
+        android:textSize="15sp"
+        android:background="@drawable/btn_direct_bg"
+        android:layout_alignParentRight="true"
+        android:visibility="invisible"
+        />
+    <Button
+        android:id="@+id/btn_detail"
+        android:layout_marginTop="333dp"
+        android:layout_width="90dp"
+        android:layout_height="30dp"
+        android:text="Detail"
+        android:textColor="#fff"
+        android:textSize="15sp"
+        android:background="@drawable/btn_detail_bg"
+        android:layout_alignParentRight="true"
+        android:visibility="invisible"/>
+
+    <!-- restaurant -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnRestaurant"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="390dp"
+        android:layout_marginRight="28dp"
+        android:clickable="true"
+        android:elevation="6dp"
+        android:src="@drawable/ic_restaurant"
+        app:backgroundTint="#006837"
+        app:fabSize="mini"
+        app:pressedTranslationZ="15dp"
+        android:visibility="invisible"/>
+
+    <!-- cafe -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnCafe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="340dp"
+        android:layout_marginRight="28dp"
+        android:clickable="true"
+        android:src="@drawable/ic_coffee"
+        app:backgroundTint="#8cc63f"
+        app:fabSize="mini"
+        android:elevation="6dp"
+        app:pressedTranslationZ="15dp"
+        android:visibility="invisible"/>
+
+    <!-- gas station -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnGasStation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="290dp"
+        android:layout_marginRight="28dp"
+        android:clickable="true"
+        android:src="@drawable/ic_gas"
+        app:backgroundTint="#006837"
+        app:fabSize="mini"
+        android:elevation="6dp"
+        app:pressedTranslationZ="15dp"
+        android:visibility="invisible"/>
+
+    <!-- atm -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnATM"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="240dp"
+        android:layout_marginRight="28dp"
+        android:clickable="true"
+        android:src="@drawable/ic_credit_card"
+        app:backgroundTint="#8cc63f"
+        app:fabSize="mini"
+        android:elevation="6dp"
+        app:pressedTranslationZ="15dp"
+        android:visibility="invisible"/>
+
+    <!-- hospital -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnHospital"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="190dp"
+        android:layout_marginRight="28dp"
+        android:clickable="true"
+        android:src="@drawable/ic_hospital"
+        app:backgroundTint="#006837"
+        app:fabSize="mini"
+        android:elevation="6dp"
+        app:pressedTranslationZ="15dp"
+        android:visibility="invisible"/>
+
+    <!-- supermarket -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnSupermarket"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="140dp"
+        android:layout_marginRight="28dp"
+        android:clickable="true"
+        android:src="@drawable/ic_cart"
+        app:backgroundTint="#8cc63f"
+        app:fabSize="mini"
+        android:elevation="6dp"
+        app:pressedTranslationZ="15dp"
+        android:visibility="invisible"/>
+
+    <!-- menu -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="80dp"
+        android:layout_marginRight="20dp"
+        android:clickable="true"
+        android:src="@drawable/fab_plus"
+        app:backgroundTint="#13ca03"
+        app:borderWidth="0dp"
+        app:elevation="6dp"
+        app:pressedTranslationZ="9dp"/>
+
+    <!-- name locate -->
+
+    <!-- restaurant -->
+    <TextView
+        android:id="@+id/tv_restaurant"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Restaurant"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="400dp"
+        android:layout_marginRight="80dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textStyle="italic"
+        android:textColor="#fff"
+        android:background="#b0050303"
+        android:visibility="invisible"/>
+
+    <!-- cafe -->
+    <TextView
+        android:id="@+id/tv_cafe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cafe"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="350dp"
+        android:layout_marginRight="80dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textStyle="italic"
+        android:textColor="#fff"
+        android:background="#b0050303"
+        android:visibility="invisible"/>
+
+    <!-- gas station -->
+    <TextView
+        android:id="@+id/tv_gas_station"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Gas Station"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="300dp"
+        android:layout_marginRight="80dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textStyle="italic"
+        android:textColor="#fff"
+        android:background="#b0050303"
+        android:visibility="invisible"/>
+
+    <!-- ATM -->
+    <TextView
+        android:id="@+id/tv_ATM"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ATM"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="250dp"
+        android:layout_marginRight="80dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textStyle="italic"
+        android:textColor="#fff"
+        android:background="#b0050303"
+        android:visibility="invisible"/>
+
+    <!-- hospital -->
+    <TextView
+        android:id="@+id/tv_hospital"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hospital"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="200dp"
+        android:layout_marginRight="80dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textStyle="italic"
+        android:textColor="#fff"
+        android:background="#b0050303"
+        android:visibility="invisible"/>
+
+    <!-- supermarket -->
+    <TextView
+        android:id="@+id/tv_supermarket"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Grocery"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="150dp"
+        android:layout_marginRight="80dp"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textStyle="italic"
+        android:textColor="#fff"
+        android:background="#b0050303"
+        android:visibility="invisible"/>
+
+    <!-- locate me -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btnMyLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="20dp"
+        android:clickable="true"
+        android:src="@drawable/ic_crosshair"
+        app:backgroundTint="#ffffff"
+        app:borderWidth="0dp"
+        app:elevation="6dp"
+        app:pressedTranslationZ="9dp"
+        app:rippleColor="#acacac" />
 </RelativeLayout>
