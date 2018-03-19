@@ -1,39 +1,41 @@
 package com.example.phong.googlemap;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.phong.googlemap.adapter.BannerAdapter;
 import com.example.phong.googlemap.adapter.ReviewAdapter;
 import com.example.phong.googlemap.json.ParseJson;
 import com.example.phong.googlemap.model.PlaceDetails;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
+import org.json.JSONObject;
 
-import javax.net.ssl.HttpsURLConnection;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import me.relex.circleindicator.CircleIndicator;
 
 import static com.example.phong.googlemap.MapActivity.mMenu;
 import static com.example.phong.googlemap.MapActivity.myLocation;
@@ -48,17 +50,15 @@ public class DetailActivity extends AppCompatActivity {
 
     private final String KEY_API_PLACES = "AIzaSyBFvDELwXmjPhs759Sey7vpdMfJRwEbhhg";
     private final String BASIC_URL = "https://maps.googleapis.com/maps/api/place/details/json?placeid=";
+    private final String BASiC_URL_PHOTO = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=";
     private final String TXT_KEY = "&key=";
     private final String LANGUAGE = "&language=vn";
-
-    private final String BASiC_URL_PHOTO = "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=";
 
     private String placeID = null;
     private String url = null;
 
-    private LinearLayout lnHeader;
     private TextView txtAddress;
-    private ImageView imgRating1,imgRating2,imgRating3,imgRating4,imgRating5 , imvOpenNow;
+    private ImageView imgRating1, imgRating2, imgRating3, imgRating4, imgRating5, imvOpenNow,imgDefault;
 
     private ListView lvReviews;
 
@@ -67,8 +67,13 @@ public class DetailActivity extends AppCompatActivity {
     AppBarLayout Appbar;
     CollapsingToolbarLayout CoolToolbar;
     Toolbar toolbar;
+    private static int currentPage = 0;
+    CircleIndicator indicator;
+    ViewPager mViewPager;
 
-    boolean ExpandedActionBar = true;
+    RequestQueue requestQueue;
+    ArrayList<String> pictures;
+
 
     @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
     @Override
@@ -76,33 +81,40 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_place_details_layout);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        try{
+
+        requestQueue = Volley.newRequestQueue(this);
+        pictures = new ArrayList<>();
+
+        try {
             Intent intent = getIntent();
             if (intent != null) {
                 Bundle bundle = intent.getBundleExtra("Data");
                 if (bundle != null) {
                     placeID = bundle.getString("PlaceID");
-                    Log.d(TAG,"PlaceId " + placeID);
                     buidURL();
                 }
             }
-        }catch (NullPointerException e){
+        } catch (NullPointerException e) {
 
         }
+
+        mViewPager = (ViewPager) findViewById(R.id.viewPager);
+        indicator = (CircleIndicator) findViewById(R.id.indicator);
 
         CoolToolbar = (CollapsingToolbarLayout) findViewById(R.id.collaps);
         Appbar = (AppBarLayout) findViewById(R.id.app_bar_layout);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
+
         setSupportActionBar(toolbar);
-        if(getSupportActionBar() != null)
+        if (getSupportActionBar() != null)
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         //btnBack = (Button) findViewById(R.id.btn_back_details);
-        lnHeader = (LinearLayout) findViewById(R.id.ln_photo_details);
         txtAddress = (TextView) findViewById(R.id.txt_address);
         txtPhone = (TextView) findViewById(R.id.txt_phone);
         txtWeb = (TextView) findViewById(R.id.txt_web);
         txtRating = (TextView) findViewById(R.id.txt_rating);
+        imgDefault = (ImageView) findViewById(R.id.imgDefault);
 
         imgRating1 = (ImageView) findViewById(R.id.imv_rating_review1);
         imgRating2 = (ImageView) findViewById(R.id.imv_rating_review2);
@@ -111,13 +123,12 @@ public class DetailActivity extends AppCompatActivity {
         imgRating5 = (ImageView) findViewById(R.id.imv_rating_review5);
 
 
-        imvOpenNow =(ImageView)findViewById(R.id.ic_open_now);
+        imvOpenNow = (ImageView) findViewById(R.id.ic_open_now);
 
         lvReviews = (ListView) findViewById(R.id.lvReviews);
 
         if (url != null) {
-            ParseTask placeDtails = new ParseTask();
-            placeDtails.execute(url);
+            parseDetail(url);
         }
 
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
@@ -125,110 +136,79 @@ public class DetailActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 onBackPressed();
-                overridePendingTransition(R.anim.slide_in_left,R.anim.slide_out_right);
+                overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
                 myLocation.show();
                 mMenu.show();
             }
         });
     }
 
-
     private void buidURL() {
         url = BASIC_URL + placeID + LANGUAGE + TXT_KEY + KEY_API_PLACES;
+        Log.d(TAG,"Url " + url);
     }
 
-    //ParseTask
-    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
-    private class ParseTask extends AsyncTask<String,Integer,String>{
+    private void parseDetail(String url) {
+        JsonObjectRequest objectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
 
-        @Override
-        protected String doInBackground(String... url) {
-            String data = null;
-            try{
-                data = DownLoadUrl(url[0]);
-
-            }catch (Exception e){
-                Log.d("Background Task", e.getMessage());
+                PlaceDetails place = new PlaceDetails();
+                ParseJson parseJson = new ParseJson();
+                parseJson.detailsParse(response,place);
+                updateUI(place);
             }
-            return data;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            ParseDetail parseDetail = new ParseDetail();
-            parseDetail.execute(s);
-        }
-    }
-
-    //parse places detail
-    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
-    private class ParseDetail extends AsyncTask<String,Integer,PlaceDetails>{
-
-        @Override
-        protected PlaceDetails doInBackground(String... strings) {
-            PlaceDetails data = null;
-            try {
-                ParseJson parseDetail = new ParseJson();
-                data = parseDetail.detailsParse(strings[0]);
-            }catch (Exception e){
-
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d(TAG,"error" + error);
             }
-            return data;
-        }
+        });
 
-        @Override
-        protected void onPostExecute(PlaceDetails placeDetails) {
-            buidPhoto(placeDetails);
-            updateUI(placeDetails);
-        }
+        requestQueue.add(objectRequest);
     }
 
-    //download url
-    private String DownLoadUrl(String strUrl) throws Exception{
-        String data = "";
-        InputStream inputStream = null;
-        HttpsURLConnection urlConnection = null;
-        try{
-            URL Url = new URL(strUrl);
-
-            // creating http connection
-            urlConnection = (HttpsURLConnection) Url.openConnection();
-
-            //connection to url
-            urlConnection.connect();
-
-            //reading data from url
-            inputStream = urlConnection.getInputStream();
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-
-            StringBuffer sb = new StringBuffer();
-
-            String line = "";
-            while((line = br.readLine()) != null){
-                sb.append(line);
-            }
-
-            data = sb.toString();
-            br.close();
-        }catch (Exception e){
-
-
-        }finally {
-
-            inputStream.close();
-            urlConnection.disconnect();
-        }
-        return data;
-    }
 
     //update UI detail
-    private void updateUI(final PlaceDetails placeDetails){
+    private void updateUI(final PlaceDetails placeDetails) {
 
-        Log.d("name: ", placeDetails.getName());
-        Log.d("address: ", placeDetails.getAddress());
-        Log.d("phone: ", placeDetails.getPhoneNumber());
-        Log.d("website: ", placeDetails.getWebsite());
+        if(placeDetails.getPhoto() == null){
+            mViewPager.setEnabled(false);
+            mViewPager.setVisibility(View.GONE);
+            imgDefault.setVisibility(View.VISIBLE);
+            indicator.setVisibility(View.GONE);
+        }else {
+
+            for (int i = 0; i < placeDetails.getPhoto().size(); i++) {
+                String urlPhoto = BASiC_URL_PHOTO + placeDetails.getPhoto().get(i).trim() + TXT_KEY + KEY_API_PLACES;
+                pictures.add(urlPhoto);
+                Log.d(TAG, "Picture " + placeDetails.getPhoto().get(i));
+                mViewPager.setEnabled(true);
+                mViewPager.setVisibility(View.VISIBLE);
+                imgDefault.setVisibility(View.GONE);
+                indicator.setVisibility(View.VISIBLE);
+                mViewPager.setAdapter(new BannerAdapter(DetailActivity.this, pictures));
+                indicator.setViewPager(mViewPager);
+            }
+        }
+
+        // Auto start of viewpager
+        final Handler handler = new Handler();
+        final Runnable Update = new Runnable() {
+            public void run() {
+                if (currentPage == pictures.size()) {
+                    currentPage = 0;
+                }
+                mViewPager.setCurrentItem(currentPage++, true);
+            }
+        };
+        Timer swipeTimer = new Timer();
+        swipeTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(Update);
+            }
+        }, 2500, 2500);
 
         CoolToolbar.setTitle(placeDetails.getName());
         Appbar.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
@@ -243,26 +223,27 @@ public class DetailActivity extends AppCompatActivity {
                 if (scrollRange + verticalOffset == 0) {
                     CoolToolbar.setTitle("Information");
                     isShow = true;
-                } else if(isShow) {
+                } else if (isShow) {
                     CoolToolbar.setTitle(placeDetails.getName());
                     isShow = false;
                 }
             }
         });
 
+
+
         txtAddress.setText(placeDetails.getAddress());
         txtPhone.setText(placeDetails.getPhoneNumber());
         txtWeb.setText(placeDetails.getWebsite());
-        if(placeDetails.getRating() == -1){
+        if (placeDetails.getRating() == -1) {
             txtRating.setText("Empty");
-        }else {
+        } else {
             txtRating.setText(String.valueOf(placeDetails.getRating()));
         }
 
-        Log.d(TAG,"Review " + placeDetails.getReview());
         //list review
-        if(placeDetails.getReview() != null){
-            ReviewAdapter rv = new ReviewAdapter(this,R.layout.list_review_details_item,placeDetails.getReview());
+        if (placeDetails.getReview() != null) {
+            ReviewAdapter rv = new ReviewAdapter(this, R.layout.list_review_details_item, placeDetails.getReview());
             lvReviews.setAdapter(rv);
             rv.notifyDataSetChanged();
         }
@@ -270,12 +251,12 @@ public class DetailActivity extends AppCompatActivity {
         //open now
         String openNow;
         openNow = placeDetails.getOpenNow();
-        if(openNow.equals("true")){
+        if (openNow.equals("true")) {
             imvOpenNow.setImageResource(R.drawable.opened);
-        }else{
-            if(openNow.equals("false")){
+        } else {
+            if (openNow.equals("false")) {
                 imvOpenNow.setImageResource(R.drawable.closed);
-            }else{
+            } else {
                 imvOpenNow.setImageResource(R.drawable.no_data_open_now);
             }
         }
@@ -368,59 +349,6 @@ public class DetailActivity extends AppCompatActivity {
                     }
                 }
             }
-        }
-    }
-
-    //download Image and Add to bitmap
-    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
-    private class DownloadImage extends AsyncTask<String,Integer,Bitmap>{
-
-        @Override
-        protected Bitmap doInBackground(String... imgUrl) {
-            Bitmap imgBitmap = null;
-            try{
-
-                URL url = new URL(imgUrl[0]);
-                URLConnection urlConnection = url.openConnection();
-                urlConnection.connect();
-
-                //read file
-                InputStream inputStream = new BufferedInputStream(url.openStream(),8192);
-                imgBitmap = BitmapFactory.decodeStream(inputStream);
-
-            }catch (Exception e){
-
-            }
-            return imgBitmap;
-        }
-
-        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            updatePhoto(bitmap);
-
-        }
-    }
-
-    //buid url to get place photo
-    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
-    private void buidPhoto(PlaceDetails place) {
-        ArrayList<String> photos = place.getPhoto();
-        if (photos != null) {
-            String urlPhoto = BASiC_URL_PHOTO + photos.get(0).trim() + TXT_KEY + KEY_API_PLACES;
-            Log.d("test", urlPhoto);
-            DownloadImage downPhoto = new DownloadImage();
-            downPhoto.execute(urlPhoto);
-        }
-
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-    private void updatePhoto(Bitmap placePhoto) {
-
-        if (placePhoto != null) {
-            BitmapDrawable photo = new BitmapDrawable(placePhoto);
-            lnHeader.setBackground(photo);
         }
     }
 

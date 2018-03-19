@@ -24,14 +24,30 @@
             android:fitsSystemWindows="true"
             >
 
-            <LinearLayout
-                android:id="@+id/ln_photo_details"
+            <RelativeLayout
+                android:id="@+id/relLayout2"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/image_default"
-                android:gravity="bottom"
-                android:orientation="vertical">
-            </LinearLayout>
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:visibility="invisible"
+                    android:src="@drawable/image_default"
+                    android:id="@+id/imgDefault"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <android.support.v4.view.ViewPager
+                    android:id="@+id/viewPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+
+                <me.relex.circleindicator.CircleIndicator
+                    android:id="@+id/indicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"/>
+            </RelativeLayout>
 
             <android.support.v7.widget.Toolbar
                 android:id="@+id/toolbar"

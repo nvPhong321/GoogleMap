@@ -8,7 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -34,6 +33,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.phong.googlemap.adapter.PlaceAutocompleteAdapter;
 import com.example.phong.googlemap.json.ParseJson;
 import com.example.phong.googlemap.model.Directions;
@@ -151,6 +157,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private String typeSearch;
     private String latSearch;
     private float carmeraZoom;
+    RequestQueue requestQueue;
 
 
     private PlaceAutocompleteAdapter mAdapter;
@@ -164,6 +171,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         listPlaces = new ArrayList<>();
         nearByPlace = new NearByPlaces();
+
+        requestQueue = Volley.newRequestQueue(this);
 
         myLocation = (FloatingActionButton) findViewById(R.id.btnMyLocation);
         edtsearch = (AutoCompleteTextView) findViewById(R.id.edtSearch);
@@ -247,8 +256,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             public void onClick(View view) {
                 hideButton();
                 String url = buidURLDirections();
-                DirectionsTask directionsTask = new DirectionsTask();
-                directionsTask.execute(url);
+                parseDirection(url);
 
                 CameraPosition cameraPosition = new CameraPosition.Builder()
                         .target(locateMe)      // Sets the center of the map to Mountain View
@@ -346,9 +354,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         buidURLSearch();
         Log.d("test", urlNearBy);
-        ParseNearPlaces places = new ParseNearPlaces();
+        parseNearByPlaces(urlNearBy);
         mMap.clear();
-        places.execute(urlNearBy);
         hideChildMenu();
 
     }
@@ -502,8 +509,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapLoaded() {
         getDevidelocation();
         buidURLSearch();
-        ParseNearPlaces placesTask = new ParseNearPlaces();
-        placesTask.execute(urlNearBy);
+        parseNearByPlaces(urlNearBy);
     }
 
     private void initMap() {
@@ -656,8 +662,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void searchLocate() {
         String textSearch = edtsearch.getText().toString();
         String url = buidURLTextSearch(textSearch);
-        ParsePlaces places = new ParsePlaces();
-        places.execute(url);
+        searchNearByPlaces(url);
     }
 
     private void buidURLSearch() {
@@ -666,6 +671,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 TXT_TYPE + typeSearch + TOKEN_AND +
                 SENSOR + TOKEN_AND +
                 TXT_KEY + KEY_API_PLACES;
+        Log.d(TAG," URL " + urlNearBy);
     }
 
     private String buidURLTextSearch(String textS) {
@@ -752,12 +758,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         markerOptions.title(nearByPlaces.getName());
         markerOptions.snippet(nearByPlaces.getAddress());
 
-        Log.d("updatePlacesNB","places ID" + String.valueOf(nearByPlaces.getPlaceID()));
-        Log.d("updatePlacesNB","Lat" + String.valueOf(nearByPlaces.getLatitude()));
-        Log.d("updatePlacesNB","Long" + String.valueOf(nearByPlaces.getLongitude()));
-        Log.d("updatePlacesNB","address" + String.valueOf(nearByPlaces.getAddress()));
-        Log.d("updatePlacesNB","name" + String.valueOf(nearByPlaces.getName()));
-        Log.d("updatePlacesNB","types" + String.valueOf(nearByPlaces.getTypes()));
         switch (typeSearch) {
             case "cafe":
                 markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_cafe_map));
@@ -847,119 +847,64 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     }
 
-    //parseJson NearByPlaces
-    private class ParseTask extends AsyncTask<JSONObject, Integer, NearByPlaces> {
-        NearByPlaces data = null;
+    private void parseNearByPlaces(String url){
+        JsonObjectRequest objectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONArray resultArr = response.getJSONArray("results");
+                    for (int i = 0; i < resultArr.length(); i++) {
+                        JSONObject jsonPlaces = resultArr.getJSONObject(i);
+                        NearByPlaces place = new NearByPlaces();
+                        ParseJson parseJson = new ParseJson();
+                        parseJson.JSONParseNearBy(jsonPlaces,place);
+                        listPlaces.add(place);
+                        updatePlacesNB(place);
+                    }
+                }catch (JSONException e){
 
-        @Override
-        protected NearByPlaces doInBackground(JSONObject... jsonObjects) {
-            try {
-                ParseJson parseJson = new ParseJson();
-                data = parseJson.jsonNearByPlaces(jsonObjects[0]);
-            } catch (Exception e) {
-                Log.d("Background Task", e.getMessage());
-            }
-            return data;
-        }
-
-        @Override
-        protected void onPostExecute(NearByPlaces nearByPlaces) {
-            listPlaces.add(nearByPlaces);
-            searchmoveCamera(nearByPlaces);
-        }
-    }
-
-    private class ParseTasks extends AsyncTask<JSONObject, Integer, NearByPlaces> {
-        NearByPlaces data = null;
-
-        @Override
-        protected NearByPlaces doInBackground(JSONObject... jsonObjects) {
-            try {
-                ParseJson parseJson = new ParseJson();
-                data = parseJson.JSONParseNearBy(jsonObjects[0]);
-            } catch (Exception e) {
-                Log.d("Background Task", e.getMessage());
-            }
-            return data;
-        }
-
-        @Override
-        protected void onPostExecute(NearByPlaces nearByPlaces) {
-            listPlaces.add(nearByPlaces);
-            Log.d("list place" , String.valueOf(listPlaces.size()));
-            updatePlacesNB(nearByPlaces);
-        }
-    }
-
-    private class ParsePlaces extends AsyncTask<String, Integer, String> {
-
-        String data = null;
-
-        @Override
-        protected String doInBackground(String... url) {
-
-            try {
-                data = DownLoadUrl(url[0]);
-
-            } catch (Exception e) {
-                Log.d("Background Task", e.getMessage());
-            }
-
-            return data;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            listPlaces.clear();
-            JSONObject rootObject = null;
-            try {
-                rootObject = new JSONObject(result);
-                JSONArray resultArr = rootObject.getJSONArray("results");
-                for (int i = 0; i < resultArr.length(); i++) {
-                    JSONObject jsonPlaces = resultArr.getJSONObject(i);
-                    ParseTask parseTask = new ParseTask();
-                    parseTask.execute(jsonPlaces);
                 }
-            } catch (JSONException e) {
 
             }
-        }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+        requestQueue.add(objectRequest);
     }
 
-    private class ParseNearPlaces extends AsyncTask<String, Integer, String> {
+    private void searchNearByPlaces(String url){
+        JsonObjectRequest objectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONArray resultArr = response.getJSONArray("results");
+                    for (int i = 0; i < resultArr.length(); i++) {
+                        JSONObject jsonPlaces = resultArr.getJSONObject(i);
+                        NearByPlaces place = new NearByPlaces();
+                        ParseJson parseJson = new ParseJson();
+                        parseJson.jsonNearByPlaces(jsonPlaces,place);
+                        listPlaces.add(place);
+                        searchmoveCamera(place);
+                    }
+                }catch (JSONException e){
 
-        String data = null;
-
-        @Override
-        protected String doInBackground(String... url) {
-
-            try {
-                data = DownLoadUrl(url[0]);
-
-            } catch (Exception e) {
-                Log.d("Background Task", e.getMessage());
-            }
-
-            return data;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            listPlaces.clear();
-            JSONObject rootObject = null;
-            try {
-                rootObject = new JSONObject(result);
-                JSONArray resultArr = rootObject.getJSONArray("results");
-                for (int i = 0; i < resultArr.length(); i++) {
-                    JSONObject jsonPlaces = resultArr.getJSONObject(i);
-                    ParseTasks parseTasks = new ParseTasks();
-                    parseTasks.execute(jsonPlaces);
                 }
-            } catch (JSONException e) {
 
             }
-        }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+        requestQueue.add(objectRequest);
     }
+
 
     private String DownLoadUrl(String Url) throws IOException {
         String data = "";
@@ -1035,39 +980,24 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     }
 
-    private class DirectionsTask extends AsyncTask<String, Integer, String> {
-        @Override
-        protected String doInBackground(String... strings) {
-            String data = "";
-            try {
-                data = DownLoadUrl(strings[0]);
-            } catch (IOException e) {
-                e.printStackTrace();
+    private void parseDirection(String url){
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                Directions directions = new Directions();
+                ParseJson direct = new ParseJson();
+                direct.parseDirections(response,directions);
+                drawDirections(directions);
             }
-            return data;
-        }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
 
-        @Override
-        protected void onPostExecute(String directions) {
-            parseDirectionsTask directionsTask = new parseDirectionsTask();
-            directionsTask.execute(directions);
-        }
-    }
+            }
+        });
 
-    private class parseDirectionsTask extends AsyncTask<String, Integer, Directions> {
-        @Override
-        protected Directions doInBackground(String... strings) {
-            Directions directions = null;
-
-            ParseJson direct = new ParseJson();
-            directions = direct.parseDirections(strings[0]);
-            return directions;
-        }
-
-        @Override
-        protected void onPostExecute(Directions directions) {
-            drawDirections(directions);
-        }
+        requestQueue.add(stringRequest);
     }
 
     @Override

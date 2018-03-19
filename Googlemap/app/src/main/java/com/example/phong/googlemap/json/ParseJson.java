@@ -19,13 +19,11 @@ import java.util.ArrayList;
 
 public class ParseJson {
 
-    public NearByPlaces jsonNearByPlaces(JSONObject objJSON){
-        NearByPlaces nearByPlaces = new NearByPlaces();
+    public NearByPlaces jsonNearByPlaces(JSONObject objJSON,NearByPlaces nearByPlaces){
 
         try{
             JSONObject geometry = objJSON.getJSONObject("geometry");
             JSONObject location = geometry.getJSONObject("location");
-
 
             //add lat, long
             nearByPlaces.setLatitude(location.getDouble("lat"));
@@ -48,9 +46,8 @@ public class ParseJson {
         return nearByPlaces;
     }
 
-    public NearByPlaces JSONParseNearBy(JSONObject objJSON) {
+    public NearByPlaces JSONParseNearBy(JSONObject objJSON,NearByPlaces place) {
         //  Log.d("testString",stringJSON);
-        NearByPlaces place = new NearByPlaces();
         try {
             JSONObject geometry = objJSON.getJSONObject("geometry");
             JSONObject location = geometry.getJSONObject("location");
@@ -84,12 +81,10 @@ public class ParseJson {
         return place;
     }
 
-    public PlaceDetails detailsParse(String string){
-        PlaceDetails place = new PlaceDetails();
+    public PlaceDetails detailsParse(JSONObject response,PlaceDetails place){
 
         try {
-            JSONObject rootJSON = new JSONObject(string);
-            JSONObject objJSON = rootJSON.getJSONObject("result");
+            JSONObject objJSON = response.getJSONObject("result");
             if(objJSON.has("opening_hours")) {
                 JSONObject openNow = objJSON.getJSONObject("opening_hours");
                 place.setOpenNow(openNow.getString("open_now"));
@@ -141,8 +136,7 @@ public class ParseJson {
     }
 
     //parse Direction
-    public Directions parseDirections(String json){
-        Directions directions = new Directions();
+    public Directions parseDirections(String json,Directions directions){
         try {
             JSONObject rootJSON = new JSONObject(json);
             String status = rootJSON.getString("status");
